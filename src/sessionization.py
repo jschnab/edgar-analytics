@@ -5,6 +5,8 @@ import sys
 import getopt
 import csv
 from datetime import datetime
+import time
+from collections import OrderedDict
 
 def print_help():
     help_text = \
@@ -107,31 +109,31 @@ def collect_inactive(line, sessions, current_time, threshold):
 sort by increasing last time before returning as a list. Finally, \
 remove the inactive keys from the sessions dictionary."""
     # list to append with inactive sessions
-    inactive_sessions = []
+    inactive_sessions = OrderedDict()
 
     # iterate through sessions and append to list if inactive
     for k, v in sessions.items():
         last = v['last']
         if time_diff(last, current_time) > threshold + 1:
-            inactive_sessions.append(v)
+            inactive_sessions[k] = v
 
     # delete inactive sessions
-    for i in inactive_sessions:
-        del sessions[i['ip']]
+    # because cannot modify dictionary during iteration
+    for k in inactive_sessions:
+        del sessions[k]
 
-    sorted_inactive_sessions = sorted(inactive_sessions, key=lambda k: k['first'])
+    return inactive_sessions
 
-    return sorted_inactive_sessions
-
-def sessions_to_output(sessions_list):
+def sessions_to_output(sessions, output_file):
     """Write list of inactive sessions to output csv file."""
     fields = ['ip', 'first', 'last', 'duration', 'count']
     with open(output_file, 'a', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=fields)
-        for session in sessions_list:
+        for ip, session in sessions.items():
             writer.writerow(session)
 
-if __name__ == '__main__':
+def process_log():
+    """Function to process log file and write output."""
     # get arguments of command line call
     log_file, period_file, output_file = get_args()
 
@@ -146,7 +148,8 @@ if __name__ == '__main__':
     fields = get_fields(log_file)
 
     # dictionary of dictionaries containing sessions
-    sessions = {}
+    #sessions = {}
+    sessions = OrderedDict()
 
     # iterate over lines of log file
     with open(log_file, newline='') as logfile:
@@ -158,7 +161,7 @@ if __name__ == '__main__':
             if sessions != {}:
                 inactive = collect_inactive(line, sessions, curr_time, t)
                 if inactive != []:
-                    sessions_to_output(inactive)
+                    sessions_to_output(inactive, output_file)
 
             # check if current request's IP is in sessions
             # and update if it is
@@ -172,5 +175,16 @@ if __name__ == '__main__':
                 sessions[line['ip']] = line_to_dic(line)
 
     # when log was processed sort them by increasing start time and write to output
-    sorted_leftovers = sorted(sessions.values(), key=lambda k: k['first'])
-    sessions_to_output(sorted_leftovers)
+    sessions_to_output(sessions, output_file)
+
+if __name__ == '__main__':
+
+    # measure running time over 100 calls
+    total_time = 0
+    for _ in range(100):
+        start = time.time()
+        process_log()
+        stop = time.time()
+        total_time += stop - start
+
+    print('The script took {0:.4f} seconds to run on average.'.format(total_time / 100))
