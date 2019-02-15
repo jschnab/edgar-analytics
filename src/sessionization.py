@@ -10,7 +10,23 @@ from collections import OrderedDict
 
 def print_help():
     help_text = \
-            """Sorry, help is not ready, yet."""
+            """Get sessions from a requests log.
+
+    python sessionization.py -l[path to log] -p[path to period file] -o[path to output]
+
+    Please provide all options.
+
+    -l, --log
+    Path to the log file.
+
+    -p, --period-file
+    Path to the period file.
+
+    -o, --output
+    Path to the output file.
+
+    -h, --help
+    Print help."""
     print(help_text)
 
 def get_args():
