@@ -194,13 +194,4 @@ def process_log():
     sessions_to_output(sessions, output_file)
 
 if __name__ == '__main__':
-
-    # measure running time over 100 calls
-    total_time = 0
-    for _ in range(100):
-        start = time.time()
-        process_log()
-        stop = time.time()
-        total_time += stop - start
-
-    print('The script took {0:.4f} seconds to run on average.'.format(total_time / 100))
+    process_log()
